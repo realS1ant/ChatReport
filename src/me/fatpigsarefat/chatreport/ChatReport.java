@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 
+import me.fatpigsarefat.chatreport.utils.ArchiveManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -63,14 +64,19 @@ public class ChatReport extends JavaPlugin {
 				databaseSync = true;
 			}
 			Bukkit.getLogger().log(Level.INFO, response);
+		} else {
+			getLogger().severe("Can't use this plugin without the database option enabled, shutting down! ");
+			getServer().getPluginManager().disablePlugin(this);
 		}
 		reportManager = new ReportManager();
 		reportManager.pullMainThread();
+		ArchiveManager.pullMainThread();
 		if (getConfig().getBoolean("chathistory.autosave") && !getConfig().getBoolean("mysql.enabled")) {
 			new BukkitRunnable() {
 
 				@Override
 				public void run() {
+					ArchiveManager.push();
 					reportManager.push();
 				}
 
@@ -80,7 +86,7 @@ public class ChatReport extends JavaPlugin {
 
 			@Override
 			public void run() {
-				
+				ArchiveManager.pull();
 				reportManager.pull();
 			}
 
@@ -92,12 +98,14 @@ public class ChatReport extends JavaPlugin {
 	}
 
 	public DatabaseConnection getDatabaseConnection() {
+		dbConn.check();
 		return dbConn;
 	}
 
 	@Override
 	public void onDisable() {
 		reportManager.pushMainThread();
+		ArchiveManager.pushMainThread();
 	}
 
 	public static boolean isChatSupported() {

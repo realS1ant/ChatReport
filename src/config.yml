@@ -1,0 +1,63 @@
+report-reasons:
+  'advertising':
+    name: 'Advertising'
+    itemstack:
+      type: DIAMOND
+      lore:
+        - '&7This can be advertising other servers'
+        - '&7(e.g saying the name of it) or bypassing'
+        - '&7any existing chat filters.'
+  'harassment':
+    name: 'Harassment'
+    itemstack:
+      type: IRON_SWORD
+      lore:
+        - '&7Threats to players, bullying others,'
+        - '&7sharing personal information of others'
+        - '&7etc.'
+  'offensive':
+    name: 'Offensive Message(s)'
+    itemstack:
+      type: TNT
+      lore:
+        - '&7Content of offensive nature such as'
+        - '&7direct attacks on an ethnic group or'
+        - '&7racist/homophobic language.'
+  'spamming':
+    name: 'Spamming'
+    itemstack:
+      type: BOOK_AND_QUILL
+      lore:
+        - '&7Repeatedly posting the same message'
+        - '&7in chat.'
+  'suicide':
+    name: 'Suicide Jokes (or similar)'
+    itemstack:
+      type: REDSTONE
+      lore:
+        - '&7Any language used to glorify suicide'
+        - '&7or any language that is found to be putting'
+        - '&7a person at risk at harming themselves/suicide.'
+        - '&7KYS is a stupid acronym and shouldn''t be used.'
+  'other':
+    name: 'Other'
+    itemstack:
+      type: EXP_BOTTLE
+      lore:
+        - '&7Anything that does not fall under any other'
+        - '&7categories but can still be deemed inappropiate'
+        - '&7or completley unacceptable.'
+mysql:
+  enabled: false
+  database: 'jdbc:mysql://localhost:3306/minecraft'
+  username: 'root'
+  password: ''
+  sync: 120
+inventory:
+  size: 9
+messages:
+  report-created: '&b%player%''s chat history has been saved and has been sent to the moderators of the server. Thank you for your feedback and helping to keep the community safe. Report ID: #%id%'
+  report-created-moderator: '&c%reporter% &bhas created a chat report (ID: #%id%) for &c%player% &bfor the reason: &c%reason%&b. &b&l%button%&7'
+  report-unread: '&bThere are &3%amount%&b unread chat report(s)!'
+chathistory:
+  autosave: true

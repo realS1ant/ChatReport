@@ -75,6 +75,7 @@ public class ReportManager {
 		Date now = cal.getTime();
 		Report r = new Report(now, player, ch, reason, getId());
 		reports.add(r);
+		push();
 		return r;
 	}
 
@@ -178,18 +179,18 @@ public class ReportManager {
 			DatabaseConnection db = ChatReport.getInstance().getDatabaseConnection();
 			if (db.truncateTable()) {
 				for (Report r : reports) {
-					String chatHistory = "";
+					StringBuilder chatHistory = new StringBuilder();
 					int pos = 0;
 					for (String s : r.getChatHistory().getChatMessages()) {
 						pos++;
 						if (pos == r.getChatHistory().getChatMessages().size()) {
-							chatHistory = chatHistory + s;
+							chatHistory.append(s);
 						} else {
-							chatHistory = chatHistory + s + "&nl/";
+							chatHistory.append(s).append("&nl/");
 						}
 					}
 					db.query("INSERT INTO chatreports VALUES (\"" + r.getId() + "\", \"" + r.getPlayerName() + "\", \""
-							+ r.getReason() + "\", \"" + chatHistory + "\", " + r.getCreationDate().getTime() + ")");
+							+ r.getReason() + "\", \"" + chatHistory.toString() + "\", " + r.getCreationDate().getTime() + ")");
 				}
 			}
 		} else {
@@ -218,18 +219,18 @@ public class ReportManager {
 					DatabaseConnection db = ChatReport.getInstance().getDatabaseConnection();
 					if (db.truncateTable()) {
 						for (Report r : reports) {
-							String chatHistory = "";
+							StringBuilder chatHistory = new StringBuilder();
 							int pos = 0;
 							for (String s : r.getChatHistory().getChatMessages()) {
 								pos++;
 								if (pos == r.getChatHistory().getChatMessages().size()) {
-									chatHistory = chatHistory + s;
+									chatHistory.append(s);
 								} else {
-									chatHistory = chatHistory + s + "&nl/";
+									chatHistory.append(s).append("&nl/");
 								}
 							}
 							db.query("INSERT INTO chatreports VALUES (\"" + r.getId() + "\", \"" + r.getPlayerName() + "\", \""
-									+ r.getReason() + "\", \"" + chatHistory + "\", " + r.getCreationDate().getTime() + ")");
+									+ r.getReason() + "\", \"" + chatHistory.toString() + "\", " + r.getCreationDate().getTime() + ")");
 						}
 					}
 				}
@@ -261,7 +262,9 @@ public class ReportManager {
 		}
 		for (Report r : toRemove) {
 			reports.remove(r);
+			ArchiveManager.addReport(r);
 		}
+		push();
 		return false;
 	}
 

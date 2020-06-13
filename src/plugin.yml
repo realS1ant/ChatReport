@@ -1,0 +1,16 @@
+name: ChatReport
+version: 1.2-FORKED
+description: Chat Report
+authors: ["fatpigsarefat", "S1ant"]
+main: me.fatpigsarefat.chatreport.ChatReport
+
+permissions:
+  chatreport.view:
+    description: Command for staff members to view reports.
+  chatreport.delete:
+    description: Command for staff members to delete reports from the archive.
+
+commands:
+  chatreport:
+    description: ChatReport
+    usage: /chatreport

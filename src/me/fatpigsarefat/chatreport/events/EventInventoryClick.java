@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import me.fatpigsarefat.chatreport.utils.ArchiveManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -23,7 +24,7 @@ import net.md_5.bungee.api.ChatColor;
 public class EventInventoryClick implements Listener {
 
 	@EventHandler
-	public void onPlayerChat(InventoryClickEvent event) {
+	public void onInventoryClick(InventoryClickEvent event) {
 		if (event.getInventory().getName().contains(ChatColor.RESET.toString() + "Chat Report: #")) {
 			String id = ChatColor.stripColor(event.getInventory().getName().replace("Chat Report: #", ""));
 			Report r = ChatReport.getReportManager().getReport(id);
@@ -36,11 +37,12 @@ public class EventInventoryClick implements Listener {
 				event.getWhoClicked().sendMessage(ChatColor.AQUA + "== End of chat history: " + r.getPlayerName());
 				event.getWhoClicked().closeInventory();
 			}
+			//Archive Report Button
 			if (event.getSlot() == 8) {
 				Player player = (Player) event.getWhoClicked();
 				for (Player online : Bukkit.getOnlinePlayers()) {
 					if (online.hasPermission("chatreport.view")) {
-						online.sendMessage(ChatColor.AQUA + event.getWhoClicked().getName() + " deleted chat report #" + id + " (" + r.getPlayerName() + ")");
+						online.sendMessage(ChatColor.AQUA + event.getWhoClicked().getName() + " archived chat report #" + id + " (" + r.getPlayerName() + ")");
 					}
 				}
 				ChatReport.getReportManager().deleteReport(id);
@@ -49,7 +51,38 @@ public class EventInventoryClick implements Listener {
 				}
 				player.closeInventory();
 			}
-		} else if (event.getInventory().getName().contains(ChatColor.RESET.toString() + "Chat Report: ") && ChatReport.getReportManager().isReporting(event.getWhoClicked().getName())) {
+		}
+
+		else if (event.getInventory().getName().contains(ChatColor.RESET.toString() + "Archived Chat Report: #")) {
+			Report r = ArchiveManager.getReport(ChatColor.stripColor(event.getInventory().getName().replace(
+					"Archived Chat Report: #", "")));
+			event.setCancelled(true);
+			if (event.getSlot() == 1) {
+				event.getWhoClicked().sendMessage(ChatColor.AQUA + "== Viewing chat history: " + r.getPlayerName());
+				for (String s : r.getChatHistory().getChatMessages()) {
+					event.getWhoClicked().sendMessage(ChatColor.RED + r.getPlayerName() + ": " + ChatColor.WHITE + s);
+				}
+				event.getWhoClicked().sendMessage(ChatColor.AQUA + "== End of chat history: " + r.getPlayerName());
+				event.getWhoClicked().closeInventory();
+			}
+			//Delete Report Button
+			if (event.getSlot() == 8) {
+				Player player = (Player) event.getWhoClicked();
+				if(!player.hasPermission("chatreport.delete")){
+					player.sendMessage("No permission to delete this report!");
+					return;
+				}
+				for (Player online : Bukkit.getOnlinePlayers()) {
+					if (online.hasPermission("chatreport.view")) {
+						online.sendMessage(ChatColor.AQUA + event.getWhoClicked().getName() + " deleted chat report #" + r.getId() + " (" + r.getPlayerName() + ")");
+					}
+				}
+				ArchiveManager.delReport(r.getId());
+				player.closeInventory();
+			}
+		}
+
+		else if (event.getInventory().getName().contains(ChatColor.RESET.toString() + "Chat Report: ") && ChatReport.getReportManager().isReporting(event.getWhoClicked().getName())) {
 			event.setCancelled(true);
 			if (event.getCurrentItem() == null) {
 				return;
@@ -98,7 +131,9 @@ public class EventInventoryClick implements Listener {
 					break;
 				}
 			}
-		} else if (event.getInventory().getName().contains(ChatColor.RESET.toString() + "Chat Reports")) {
+		}
+
+		else if (event.getInventory().getName().contains(ChatColor.RESET.toString() + "Chat Reports")) {
 			event.setCancelled(true);
 			if (event.getCurrentItem() == null) {
 				return;
@@ -116,9 +151,9 @@ public class EventInventoryClick implements Listener {
 				List<String> isl = new ArrayList<String>();
 				isl.add(ChatColor.GRAY + " * Reason: " + ChatColor.RED + r.getReason());
 				SimpleDateFormat sdf = new SimpleDateFormat("d/M/y");
-		        Date now = new Date();
+				Date now = new Date();
 				isl.add(ChatColor.GRAY + " * Created on: " + ChatColor.RED + sdf.format(r.getCreationDate()));
-				isl.add(ChatColor.GRAY + " * Time ago: " + ChatColor.RED  + TimeUnit.MILLISECONDS.toHours(now.getTime() - r.getCreationDate().getTime()) + "h");
+				isl.add(ChatColor.GRAY + " * Time ago: " + ChatColor.RED + TimeUnit.MILLISECONDS.toHours(now.getTime() - r.getCreationDate().getTime()) + "h");
 				isl.add(ChatColor.GRAY + " * Username: " + ChatColor.RED + r.getPlayerName());
 				isl.add(" ");
 				isl.add(ChatColor.GRAY + "Left-click to view");
@@ -129,7 +164,41 @@ public class EventInventoryClick implements Listener {
 					player.closeInventory();
 					ChatreportCommand.openChatReport(player, r.getId());
 				}
- 			}
+			}
+		}
+
+		else if (event.getInventory().getName().contains(ChatColor.RESET.toString() + "Archived Chat Reports")) {
+				event.setCancelled(true);
+				if (event.getCurrentItem() == null) {
+					return;
+				}
+				for (Report r : ArchiveManager.getArchivedReports()) {
+					String configKey = "";
+					for (String s : ChatReport.getInstance().getConfig().getConfigurationSection("report-reasons").getKeys(false)) {
+						if (ChatReport.getInstance().getConfig().getString("report-reasons." + s + ".name").equals(r.getReason())) {
+							configKey = s;
+						}
+					}
+					ItemStack is = new ItemStack(Material.getMaterial(configKey == "" ? "STONE" : ChatReport.getInstance().getConfig().getString("report-reasons." + configKey + ".itemstack.type")));
+					ItemMeta ism = is.getItemMeta();
+					ism.setDisplayName(ChatColor.RED + "#" + r.getId());
+					List<String> isl = new ArrayList<String>();
+					isl.add(ChatColor.GRAY + " * Reason: " + ChatColor.RED + r.getReason());
+					SimpleDateFormat sdf = new SimpleDateFormat("d/M/y");
+					Date now = new Date();
+					isl.add(ChatColor.GRAY + " * Created on: " + ChatColor.RED + sdf.format(r.getCreationDate()));
+					isl.add(ChatColor.GRAY + " * Time ago: " + ChatColor.RED  + TimeUnit.MILLISECONDS.toHours(now.getTime() - r.getCreationDate().getTime()) + "h");
+					isl.add(ChatColor.GRAY + " * Username: " + ChatColor.RED + r.getPlayerName());
+					isl.add(" ");
+					isl.add(ChatColor.GRAY + "Left-click to view");
+					ism.setLore(isl);
+					is.setItemMeta(ism);
+					if (is.equals(event.getCurrentItem())) {
+						Player player = (Player) event.getWhoClicked();
+						player.closeInventory();
+						ChatreportCommand.openArchivedChatReport(player, r.getId());
+					}
+				}
 		}
 	}
 }
